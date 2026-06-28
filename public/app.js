@@ -125,10 +125,7 @@ function render() {
       });
 
       if (!query) {
-        html += `<button class="add-in-cat" data-addcat="${esc(cat)}">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Adicionar em ${esc(cat)}
-        </button>`;
+        // no add-in-cat button — handled by bottom bar
       }
 
       html += `</div>`;
@@ -150,7 +147,6 @@ function render() {
   }
 
   container.innerHTML = html;
-  renderSettingsCategories();
 }
 
 function esc(str) {
@@ -159,30 +155,6 @@ function esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
-}
-
-// ===== RENDER SETTINGS CATS =====
-function renderSettingsCategories() {
-  const el = document.getElementById('s-cats-list');
-  if (!el) return;
-
-  let html = state.categories.map(cat => `
-    <div class="s-cat-row">
-      <span class="s-cat-name">${esc(cat)}</span>
-      <button class="s-cat-del" data-delcat="${esc(cat)}" aria-label="Apagar categoria ${esc(cat)}">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
-        </svg>
-      </button>
-    </div>
-  `).join('');
-
-  html += `<button class="s-add-cat-row" id="s-btn-add-cat">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    Nova categoria
-  </button>`;
-
-  el.innerHTML = html;
 }
 
 // ===== TOGGLE CATEGORY =====
@@ -223,8 +195,8 @@ function toggleBought(id) {
 // ===== QUICK ADD =====
 let qaCatSelected = null;
 
-function openQuickAdd(presetCat) {
-  qaCatSelected = presetCat || state.categories[0] || null;
+function openQuickAdd() {
+  qaCatSelected = null;
   buildQACats('qa-cats');
   document.getElementById('qa-input').value = '';
   document.getElementById('qa-qty-input').value = '';
@@ -241,17 +213,14 @@ function buildQACats(containerId) {
 
 function confirmQuickAdd() {
   const name = document.getElementById('qa-input').value.trim();
-  if (!name) {
-    document.getElementById('qa-input').focus();
-    return;
-  }
+  if (!name) { document.getElementById('qa-input').focus(); return; }
+  if (!qaCatSelected) { showToast('Seleciona uma categoria'); return; }
   const qty = document.getElementById('qa-qty-input').value.trim();
-  const cat = qaCatSelected || state.categories[0] || 'Geral';
   state.items.push({
     id: Date.now(),
     name,
     qty,
-    cat,
+    cat: qaCatSelected,
     checked: false,
     bought: false
   });
@@ -536,7 +505,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (catHeader && !e.target.closest('button')) { toggleCategory(catHeader.dataset.cat); return; }
 
     const addCat = e.target.closest('[data-addcat]');
-    if (addCat) { openQuickAdd(addCat.dataset.addcat); return; }
+    if (addCat) { openQuickAdd(); return; }
   });
 
   // Long press on product rows
@@ -578,13 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
   });
 
-  // Settings cats
-  document.getElementById('s-cats-list').addEventListener('click', e => {
-    const delBtn = e.target.closest('[data-delcat]');
-    if (delBtn) { deleteCategory(delBtn.dataset.delcat); return; }
-    if (e.target.closest('#s-btn-add-cat')) { openAddCat(); }
-  });
-
   // ---- Product context menu ----
   document.getElementById('ctx-backdrop').addEventListener('click', () => {
     hideContextMenu();
@@ -619,11 +581,14 @@ document.addEventListener('DOMContentLoaded', () => {
     moveCat(ctxCatTarget, 'down');
   });
 
-  // ---- FAB & buttons ----
-  document.getElementById('fab').addEventListener('click', () => openQuickAdd());
+  // ---- Bottom bar & navigation ----
+  document.getElementById('btn-add-product').addEventListener('click', () => openQuickAdd());
   document.getElementById('btn-add-cat').addEventListener('click', openAddCat);
   document.getElementById('btn-settings').addEventListener('click', () => showScreen('screen-settings'));
   document.getElementById('btn-back-settings').addEventListener('click', () => showScreen('screen-main'));
+
+  // ---- Quick add cancel ----
+  document.getElementById('qa-cancel').addEventListener('click', () => closeOverlay('overlay-add'));
 
   // Search
   document.getElementById('search-input').addEventListener('input', render);
