@@ -133,7 +133,43 @@
           </div>
         </div>
 
-        <div class="app-version">Lista de Compras · v1.3.0</div>
+        <div class="s-section">
+          <div class="s-section-label">Backup</div>
+          <div class="s-card">
+            <button class="s-row" id="btn-export" style="cursor:pointer">
+              <span class="s-row-label">Exportar lista</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <button class="s-row s-row-last" id="btn-import" style="cursor:pointer">
+              <span class="s-row-label">Importar lista</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </button>
+            <input type="file" id="import-file" accept=".json" style="display:none">
+          </div>
+        </div>
+
+        <div class="s-section">
+          <div class="s-section-label">Sobre</div>
+          <div class="s-card">
+            <div class="s-row s-row-last">
+              <span class="s-row-label">Versão instalada</span>
+              <span class="s-row-value" id="s-version">v1.3.1</span>
+            </div>
+          </div>
+          <div id="update-available" style="display:none;margin-top:10px">
+            <div class="s-card">
+              <div class="s-row">
+                <span class="s-row-label">Nova versão disponível</span>
+                <span class="s-row-value update-badge" id="s-new-version"></span>
+              </div>
+              <button class="s-row s-row-last" id="btn-update" style="cursor:pointer">
+                <span class="s-row-label" style="color:var(--accent)">Como atualizar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <div class="safe-area-bottom"></div>
       </div>
     </div>
@@ -269,6 +305,38 @@
       <span>Apagar</span>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
     </button>
+  </div>
+
+  <!-- UPDATE INSTRUCTIONS SHEET -->
+  <div class="sheet-overlay" id="overlay-update">
+    <div class="sheet" role="dialog" aria-label="Como atualizar">
+      <div class="sheet-handle"></div>
+      <div class="sheet-content">
+        <h3 class="sheet-title">Como atualizar</h3>
+        <div class="update-steps">
+          <div class="update-step">
+            <div class="update-step-num">1</div>
+            <div class="update-step-text">Exporta a tua lista nas Definições → <strong>Exportar lista</strong> e guarda o ficheiro</div>
+          </div>
+          <div class="update-step">
+            <div class="update-step-num">2</div>
+            <div class="update-step-text">Abre o Safari e vai a <strong>gleeful-gingersnap-3632fb.netlify.app</strong></div>
+          </div>
+          <div class="update-step">
+            <div class="update-step-num">3</div>
+            <div class="update-step-text">Toca em <strong>Partilhar</strong> (□↑) → <strong>Adicionar ao ecrã principal</strong> → <strong>Adicionar</strong></div>
+          </div>
+          <div class="update-step">
+            <div class="update-step-num">4</div>
+            <div class="update-step-text">Abre a app nova e vai a Definições → <strong>Importar lista</strong> para restaurar os teus dados</div>
+          </div>
+        </div>
+        <div class="sheet-btns">
+          <button class="btn-secondary" id="update-close">Fechar</button>
+          <button class="btn-primary" id="update-open-safari">Abrir Safari</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- TOAST -->

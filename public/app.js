@@ -428,6 +428,68 @@ function moveCat(cat, direction) {
   render();
 }
 
+// ===== VERSION CHECK =====
+const CURRENT_VERSION = '1.3.1';
+
+async function checkVersion() {
+  try {
+    const resp = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    const data = await resp.json();
+    if (data.version && data.version !== CURRENT_VERSION) {
+      document.getElementById('s-new-version').textContent = 'v' + data.version;
+      document.getElementById('update-available').style.display = 'block';
+    }
+  } catch (e) {}
+}
+
+// ===== EXPORT =====
+function exportList() {
+  const backup = {
+    version: CURRENT_VERSION,
+    exportedAt: new Date().toISOString(),
+    categories: state.categories,
+    items: state.items,
+    prefs: state.prefs
+  };
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'compras-backup.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Lista exportada');
+}
+
+// ===== IMPORT =====
+function importList(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.categories || !data.items) {
+        showToast('Ficheiro inválido');
+        return;
+      }
+      if (!confirm(`Importar lista com ${data.items.length} produto(s)? Os dados atuais serão substituídos.`)) return;
+      state.categories = data.categories || [];
+      state.items = data.items || [];
+      if (data.prefs) state.prefs = { ...state.prefs, ...data.prefs };
+      state.collapsed = {};
+      saveState();
+      render();
+      showToast('Lista importada com sucesso');
+    } catch (err) {
+      showToast('Erro ao importar ficheiro');
+    }
+  };
+  reader.readAsText(file);
+}
+
 // ===== CLEAR DATA =====
 // "Limpar comprados" — remove tick direito E checkbox dos produtos comprados
 function clearBought() {
@@ -747,6 +809,27 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-clear-bought').addEventListener('click', clearBought);
   document.getElementById('btn-clear-all').addEventListener('click', clearAll);
 
+  // Export / Import
+  document.getElementById('btn-export').addEventListener('click', exportList);
+  document.getElementById('btn-import').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', e => {
+    importList(e.target.files[0]);
+    e.target.value = '';
+  });
+
+  // Update instructions
+  document.getElementById('btn-update').addEventListener('click', () => openOverlay('overlay-update'));
+  document.getElementById('update-close').addEventListener('click', () => closeOverlay('overlay-update'));
+  document.getElementById('update-open-safari').addEventListener('click', () => {
+    closeOverlay('overlay-update');
+    window.open('https://gleeful-gingersnap-3632fb.netlify.app', '_blank');
+  });
+  document.getElementById('overlay-update').addEventListener('click', e => {
+    if (e.target === document.getElementById('overlay-update')) closeOverlay('overlay-update');
+  });
+
   document.getElementById('tog-expand').setAttribute('aria-checked', state.prefs.expandByDefault);
   document.getElementById('tog-qty').setAttribute('aria-checked', state.prefs.showQty);
 
@@ -756,6 +839,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   render();
+
+  // Check for updates silently
+  checkVersion();
 });
 
 // ===== SERVICE WORKER =====
