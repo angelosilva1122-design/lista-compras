@@ -327,7 +327,29 @@ function deleteProduct(id) {
   showToast(`"${name}" apagado`);
 }
 
-// ===== CATEGORY MANAGEMENT =====
+// ===== REORDER PRODUCT =====
+function moveProduct(id, direction) {
+  const item = state.items.find(i => i.id === id);
+  if (!item) return;
+
+  // Only reorder within same category
+  const catItems = state.items.filter(i => i.cat === item.cat);
+  const catIdx = catItems.findIndex(i => i.id === id);
+
+  if (direction === 'up' && catIdx === 0) return;
+  if (direction === 'down' && catIdx === catItems.length - 1) return;
+
+  const swapItem = direction === 'up' ? catItems[catIdx - 1] : catItems[catIdx + 1];
+
+  // Swap positions in the main array
+  const idxA = state.items.indexOf(item);
+  const idxB = state.items.indexOf(swapItem);
+  [state.items[idxA], state.items[idxB]] = [state.items[idxB], state.items[idxA]];
+
+  saveState();
+  hideContextMenu();
+  render();
+}
 function openAddCat() {
   document.getElementById('cat-input').value = '';
   openOverlay('overlay-cat');
@@ -443,8 +465,19 @@ function showContextMenu(id, x, y) {
   const menu = document.getElementById('ctx-menu');
   const backdrop = document.getElementById('ctx-backdrop');
 
-  const menuWidth = 190;
-  const menuHeight = 110;
+  // Show/hide move buttons based on position within category
+  const item = state.items.find(i => i.id === id);
+  if (item) {
+    const catItems = state.items.filter(i => i.cat === item.cat);
+    const catIdx = catItems.findIndex(i => i.id === id);
+    document.getElementById('ctx-prod-up').style.display = catIdx > 0 ? 'flex' : 'none';
+    document.getElementById('ctx-prod-down').style.display = catIdx < catItems.length - 1 ? 'flex' : 'none';
+    document.getElementById('ctx-prod-up-sep').style.display = catIdx > 0 ? 'block' : 'none';
+    document.getElementById('ctx-prod-down-sep').style.display = catIdx < catItems.length - 1 ? 'block' : 'none';
+  }
+
+  const menuWidth = 200;
+  const menuHeight = 180;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
 
@@ -610,6 +643,8 @@ document.addEventListener('DOMContentLoaded', () => {
     hideContextMenu();
     deleteProduct(id);
   });
+  document.getElementById('ctx-prod-up').addEventListener('click', () => moveProduct(ctxTargetId, 'up'));
+  document.getElementById('ctx-prod-down').addEventListener('click', () => moveProduct(ctxTargetId, 'down'));
 
   // ---- Category context menu ----
   document.getElementById('ctx-cat-rename').addEventListener('click', () => {
