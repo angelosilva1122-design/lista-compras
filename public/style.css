@@ -454,7 +454,108 @@ html, body {
   transition: background 0.3s;
 }
 
-/* ===== SETTINGS ===== */
+.topbar-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ===== SUPERMARKET MODE ===== */
+.topbar.super-mode {
+  background: #1a8a45;
+  border-bottom-color: #15703a;
+}
+
+[data-theme="dark"] .topbar.super-mode {
+  background: #145e30;
+  border-bottom-color: #0f4a26;
+}
+
+.topbar.super-mode h1 {
+  color: #ffffff;
+}
+
+.topbar.super-mode .icon-btn {
+  background: rgba(255,255,255,0.2);
+  color: #ffffff;
+}
+
+.topbar.super-mode .icon-btn:active {
+  background: rgba(255,255,255,0.3);
+}
+
+.topbar.super-mode .search-wrap input {
+  background: rgba(255,255,255,0.2);
+  color: #ffffff;
+}
+
+.topbar.super-mode .search-wrap input::placeholder {
+  color: rgba(255,255,255,0.6);
+}
+
+.topbar.super-mode .search-icon {
+  color: rgba(255,255,255,0.7);
+}
+
+.topbar.super-mode .search-clear {
+  background: rgba(255,255,255,0.4);
+}
+
+.icon-btn.super-active {
+  background: rgba(255,255,255,0.25) !important;
+  color: #ffffff !important;
+}
+
+/* Progress bar */
+.progress-wrap {
+  padding: 6px 16px 8px;
+  background: #1a8a45;
+  border-bottom: 0.5px solid rgba(255,255,255,0.15);
+}
+
+[data-theme="dark"] .progress-wrap {
+  background: #145e30;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+
+.progress-pct {
+  font-size: 12px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 600;
+}
+
+.progress-track {
+  height: 4px;
+  background: rgba(255,255,255,0.25);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Locked checkbox in supermarket mode */
+.left-check.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .settings-topbar {
   background: var(--topbar-bg);
   border-bottom: 0.5px solid var(--border);

@@ -15,6 +15,7 @@ const DEFAULT_STATE = {
 };
 
 let state = loadState();
+let superMode = false;
 
 // ===== STORAGE =====
 function loadState() {
@@ -76,13 +77,14 @@ function render() {
   let totalVisible = 0;
 
   state.categories.forEach(cat => {
-    const catItems = state.items.filter(i => {
+    let catItems = state.items.filter(i => {
       if (i.cat !== cat) return false;
+      if (superMode && !i.checked) return false;
       if (query) return i.name.toLowerCase().includes(query);
       return true;
     });
 
-    if (query && catItems.length === 0) return;
+    if ((query || superMode) && catItems.length === 0) return;
     totalVisible += catItems.length;
 
     const isCollapsed = state.collapsed[cat] === true;
@@ -104,10 +106,11 @@ function render() {
       catItems.forEach(item => {
         const boughtClass = item.bought ? 'bought' : '';
         const checkClass = item.checked ? 'checked' : '';
+        const lockedClass = superMode ? 'locked' : '';
         const tickClass = item.bought ? 'bought' : '';
 
         html += `<div class="product-row ${boughtClass}" data-id="${item.id}" role="listitem">
-          <button class="left-check ${checkClass}" data-check="${item.id}" aria-label="Planeado: ${esc(item.name)}" aria-pressed="${item.checked}">
+          <button class="left-check ${checkClass} ${lockedClass}" data-check="${item.id}" aria-label="Planeado: ${esc(item.name)}" aria-pressed="${item.checked}" ${superMode ? 'tabindex="-1"' : ''}>
             <svg class="check-mark" width="12" height="10" viewBox="0 0 12 10" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <polyline points="1 5 4.5 8.5 11 1"/>
             </svg>
@@ -124,10 +127,6 @@ function render() {
         </div>`;
       });
 
-      if (!query) {
-        // no add-in-cat button — handled by bottom bar
-      }
-
       html += `</div>`;
     }
 
@@ -142,11 +141,34 @@ function render() {
       <h3>Lista vazia</h3>
       <p>Cria uma categoria e começa a adicionar produtos</p>
     </div>`;
+  } else if (superMode && totalVisible === 0) {
+    html = `<div class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/>
+      </svg>
+      <h3>Nenhum produto planeado</h3>
+      <p>Sai do modo supermercado e marca os produtos que precisas</p>
+    </div>`;
   } else if (query && totalVisible === 0) {
     html = `<div class="no-results">Nenhum resultado para "<strong>${esc(query)}</strong>"</div>`;
   }
 
   container.innerHTML = html;
+  updateProgress();
+}
+
+function updateProgress() {
+  if (!superMode) return;
+  const planned = state.items.filter(i => i.checked);
+  const bought = planned.filter(i => i.bought);
+  const total = planned.length;
+  const done = bought.length;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+
+  document.getElementById('progress-text').textContent = `${done} de ${total} apanhado${total !== 1 ? 's' : ''}`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  document.getElementById('progress-fill').style.width = pct + '%';
 }
 
 function esc(str) {
@@ -155,6 +177,32 @@ function esc(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+// ===== SUPERMARKET MODE =====
+function toggleSuperMode() {
+  superMode = !superMode;
+  const topbar = document.getElementById('topbar');
+  const bottombar = document.querySelector('.bottombar');
+  const progressWrap = document.getElementById('progress-wrap');
+  const btn = document.getElementById('btn-supermarket');
+
+  topbar.classList.toggle('super-mode', superMode);
+  btn.classList.toggle('super-active', superMode);
+  btn.setAttribute('aria-pressed', superMode);
+  progressWrap.style.display = superMode ? 'block' : 'none';
+  bottombar.style.display = superMode ? 'none' : 'flex';
+
+  // Update status bar color on iOS
+  const meta = document.getElementById('theme-color-meta');
+  if (superMode) {
+    meta.setAttribute('content', '#1a8a45');
+  } else {
+    applyTheme(state.theme);
+  }
+
+  render();
+  if (superMode) showToast('Modo supermercado ativado');
 }
 
 // ===== TOGGLE CATEGORY =====
@@ -582,6 +630,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---- Bottom bar & navigation ----
+  document.getElementById('btn-supermarket').addEventListener('click', toggleSuperMode);
   document.getElementById('btn-add-product').addEventListener('click', () => openQuickAdd());
   document.getElementById('btn-add-cat').addEventListener('click', openAddCat);
   document.getElementById('btn-settings').addEventListener('click', () => showScreen('screen-settings'));
