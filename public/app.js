@@ -157,6 +157,7 @@ function render() {
   container.innerHTML = html;
   updateProgress();
   updateAddProductButton();
+  updateExpandAllButton();
 }
 
 function updateAddProductButton() {
@@ -177,12 +178,8 @@ function updateProgress() {
   document.getElementById('progress-pct').textContent = `${pct}%`;
   document.getElementById('progress-fill').style.width = pct + '%';
 
-  const banner = document.getElementById('success-banner');
   const isComplete = total > 0 && done === total;
-  banner.classList.toggle('show', isComplete);
-  if (isComplete) {
-    document.getElementById('success-sub').textContent = `Todos os ${total} produto${total !== 1 ? 's' : ''} apanhado${total !== 1 ? 's' : ''}`;
-  }
+  document.getElementById('success-text').style.display = isComplete ? 'block' : 'none';
 }
 
 function esc(str) {
@@ -206,9 +203,6 @@ function toggleSuperMode() {
   btn.setAttribute('aria-pressed', superMode);
   progressWrap.style.display = superMode ? 'block' : 'none';
   bottombar.style.display = superMode ? 'none' : 'flex';
-  if (!superMode) {
-    document.getElementById('success-banner').classList.remove('show');
-  }
 
   // Update status bar color on iOS
   const meta = document.getElementById('theme-color-meta');
@@ -220,6 +214,30 @@ function toggleSuperMode() {
 
   render();
   if (superMode) showToast('Modo supermercado ativado');
+}
+
+// ===== EXPAND/COLLAPSE ALL =====
+function toggleExpandAll() {
+  const anyExpanded = state.categories.some(c => state.collapsed[c] !== true);
+  if (anyExpanded) {
+    // Collapse all
+    state.categories.forEach(c => { state.collapsed[c] = true; });
+  } else {
+    // Expand all
+    state.categories.forEach(c => { delete state.collapsed[c]; });
+  }
+  saveState();
+  render();
+}
+
+function updateExpandAllButton() {
+  const btn = document.getElementById('btn-expand-all');
+  const text = document.getElementById('expand-all-text');
+  if (!btn) return;
+  const anyExpanded = state.categories.some(c => state.collapsed[c] !== true);
+  btn.classList.toggle('all-collapsed', !anyExpanded);
+  text.textContent = anyExpanded ? 'Recolher tudo' : 'Expandir tudo';
+  btn.style.display = state.categories.length === 0 ? 'none' : 'flex';
 }
 
 // ===== TOGGLE CATEGORY =====
@@ -450,7 +468,7 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.2';
+const CURRENT_VERSION = '1.3.3';
 
 async function checkVersion() {
   try {
@@ -539,14 +557,16 @@ function clearAll() {
   showToast('Todos os ticks removidos');
 }
 
-// "Limpar lista" no modo supermercado — limpa ticks dos comprados e sai do modo
+// "Concluir compras" no modo supermercado — limpa ticks e checkbox dos produtos
+// comprados, mantém marcados (checkbox) os que ainda não foram comprados
 function clearListAfterShopping() {
-  if (!confirm('Limpar todos os ticks e sair do modo supermercado?')) return;
+  if (!confirm('Concluir compras e sair do modo supermercado?')) return;
   state.items.forEach(i => {
     if (i.bought) {
       i.bought = false;
       i.checked = false;
     }
+    // produtos só com checkbox (planeados, não comprados) mantêm-se inalterados
   });
   saveState();
   toggleSuperMode();
@@ -765,6 +785,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---- Bottom bar & navigation ----
   document.getElementById('btn-supermarket').addEventListener('click', toggleSuperMode);
   document.getElementById('btn-clear-list').addEventListener('click', clearListAfterShopping);
+  document.getElementById('btn-expand-all').addEventListener('click', toggleExpandAll);
   document.getElementById('btn-add-product').addEventListener('click', () => openQuickAdd());
   document.getElementById('btn-add-cat').addEventListener('click', openAddCat);
   document.getElementById('btn-settings').addEventListener('click', () => showScreen('screen-settings'));
