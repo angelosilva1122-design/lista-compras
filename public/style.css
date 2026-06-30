@@ -607,7 +607,7 @@ html, body {
 /* List toolbar (expand/collapse all) */
 .list-toolbar {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 8px 16px 0;
   flex-shrink: 0;
 }
@@ -712,6 +712,9 @@ html, body {
   justify-content: space-between;
   padding: 12px 14px;
   border-bottom: 0.5px solid var(--separator);
+  border-top: none;
+  border-left: none;
+  border-right: none;
   background: transparent;
   border-radius: 0;
   width: 100%;
@@ -719,6 +722,10 @@ html, body {
   gap: 12px;
   cursor: default;
   transition: background 0.15s;
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
 }
 
 .s-row.s-row-last {
