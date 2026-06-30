@@ -1,4 +1,4 @@
-const CACHE = 'compras-v1.3.1';
+const CACHE = 'compras-v1.3.2';
 const ASSETS = [
   '/',
   '/index.html',
@@ -24,7 +24,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
-  // Never cache version.json
   if (e.request.url.includes('version.json')) {
     e.respondWith(fetch(e.request));
     return;

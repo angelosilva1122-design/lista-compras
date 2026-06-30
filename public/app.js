@@ -156,6 +156,13 @@ function render() {
 
   container.innerHTML = html;
   updateProgress();
+  updateAddProductButton();
+}
+
+function updateAddProductButton() {
+  const btn = document.getElementById('btn-add-product');
+  if (!btn) return;
+  btn.classList.toggle('disabled', state.categories.length === 0);
 }
 
 function updateProgress() {
@@ -169,6 +176,13 @@ function updateProgress() {
   document.getElementById('progress-text').textContent = `${done} de ${total} apanhado${total !== 1 ? 's' : ''}`;
   document.getElementById('progress-pct').textContent = `${pct}%`;
   document.getElementById('progress-fill').style.width = pct + '%';
+
+  const banner = document.getElementById('success-banner');
+  const isComplete = total > 0 && done === total;
+  banner.classList.toggle('show', isComplete);
+  if (isComplete) {
+    document.getElementById('success-sub').textContent = `Todos os ${total} produto${total !== 1 ? 's' : ''} apanhado${total !== 1 ? 's' : ''}`;
+  }
 }
 
 function esc(str) {
@@ -192,6 +206,9 @@ function toggleSuperMode() {
   btn.setAttribute('aria-pressed', superMode);
   progressWrap.style.display = superMode ? 'block' : 'none';
   bottombar.style.display = superMode ? 'none' : 'flex';
+  if (!superMode) {
+    document.getElementById('success-banner').classList.remove('show');
+  }
 
   // Update status bar color on iOS
   const meta = document.getElementById('theme-color-meta');
@@ -244,6 +261,10 @@ function toggleBought(id) {
 let qaCatSelected = null;
 
 function openQuickAdd() {
+  if (state.categories.length === 0) {
+    showToast('Cria uma categoria primeiro');
+    return;
+  }
   qaCatSelected = null;
   buildQACats('qa-cats');
   document.getElementById('qa-input').value = '';
@@ -429,7 +450,7 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.1';
+const CURRENT_VERSION = '1.3.2';
 
 async function checkVersion() {
   try {
@@ -516,6 +537,19 @@ function clearAll() {
   saveState();
   render();
   showToast('Todos os ticks removidos');
+}
+
+// "Limpar lista" no modo supermercado — limpa ticks dos comprados e sai do modo
+function clearListAfterShopping() {
+  if (!confirm('Limpar todos os ticks e sair do modo supermercado?')) return;
+  state.items.forEach(i => {
+    if (i.bought) {
+      i.bought = false;
+      i.checked = false;
+    }
+  });
+  saveState();
+  toggleSuperMode();
 }
 
 // ===== CONTEXT MENU (PRODUCTS) =====
@@ -653,9 +687,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Long press on product rows
   document.getElementById('list-container').addEventListener('pointerdown', e => {
-    // Category long press
+    // Category long press (disabled in supermarket mode)
     const catHeader = e.target.closest('.cat-header');
     if (catHeader && !e.target.closest('button')) {
+      if (superMode) return;
       const cat = catHeader.dataset.cat;
       pressTimer = setTimeout(() => {
         pressTimer = null;
@@ -665,9 +700,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Product long press
+    // Product long press (edit/delete/move disabled in supermarket mode)
     const row = e.target.closest('.product-row');
     if (!row || e.target.closest('button')) return;
+    if (superMode) return;
     row.classList.add('pressing');
     const id = parseInt(row.dataset.id);
     pressTimer = setTimeout(() => {
@@ -728,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ---- Bottom bar & navigation ----
   document.getElementById('btn-supermarket').addEventListener('click', toggleSuperMode);
+  document.getElementById('btn-clear-list').addEventListener('click', clearListAfterShopping);
   document.getElementById('btn-add-product').addEventListener('click', () => openQuickAdd());
   document.getElementById('btn-add-cat').addEventListener('click', openAddCat);
   document.getElementById('btn-settings').addEventListener('click', () => showScreen('screen-settings'));
