@@ -1239,6 +1239,31 @@ html, body {
   font-weight: 600;
 }
 
+.hidden {
+  display: none !important;
+}
+
+.settings-spacer {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.s-row-clickable {
+  cursor: pointer;
+}
+
+.s-row-accent svg {
+  color: var(--accent);
+}
+
+.s-row-label-accent {
+  color: var(--accent) !important;
+}
+
+.update-available-wrap {
+  margin-top: 10px;
+}
+
 /* ===== ANIMATIONS ===== */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

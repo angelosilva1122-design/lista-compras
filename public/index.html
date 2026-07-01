@@ -35,7 +35,7 @@
             </button>
           </div>
         </div>
-        <div class="progress-wrap" id="progress-wrap" style="display:none">
+        <div class="progress-wrap hidden" id="progress-wrap">
           <div class="progress-info">
             <span class="progress-text" id="progress-text">0 de 0 apanhados</span>
             <span class="progress-pct" id="progress-pct">0%</span>
@@ -44,7 +44,7 @@
             <div class="progress-fill" id="progress-fill"></div>
           </div>
           <div class="progress-footer">
-            <span class="success-text" id="success-text" style="display:none">Compras concluídas!</span>
+            <span class="success-text hidden" id="success-text">Compras concluídas!</span>
             <span class="progress-spacer"></span>
             <button class="clear-list-btn" id="btn-clear-list">Concluir compras</button>
           </div>
@@ -104,7 +104,7 @@
           Voltar
         </button>
         <h2>Definições</h2>
-        <div style="width:70px"></div>
+        <div class="settings-spacer"></div>
       </div>
       <div class="settings-body">
 
@@ -150,15 +150,15 @@
         <div class="s-section">
           <div class="s-section-label">Backup</div>
           <div class="s-card">
-            <button class="s-row" id="btn-export" style="cursor:pointer">
+            <button class="s-row s-row-clickable" id="btn-export">
               <span class="s-row-label">Exportar lista</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
-            <button class="s-row s-row-last" id="btn-import" style="cursor:pointer">
+            <button class="s-row s-row-last s-row-clickable" id="btn-import">
               <span class="s-row-label">Importar lista</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
             </button>
-            <input type="file" id="import-file" accept=".json" style="display:none">
+            <input type="file" id="import-file" accept=".json" class="hidden">
           </div>
         </div>
 
@@ -167,18 +167,18 @@
           <div class="s-card">
             <div class="s-row s-row-last">
               <span class="s-row-label">Versão instalada</span>
-              <span class="s-row-value" id="s-version">v1.3.4</span>
+              <span class="s-row-value" id="s-version">v1.3.5</span>
             </div>
           </div>
-          <div id="update-available" style="display:none;margin-top:10px">
+          <div id="update-available" class="hidden update-available-wrap">
             <div class="s-card">
               <div class="s-row">
                 <span class="s-row-label">Nova versão disponível</span>
                 <span class="s-row-value update-badge" id="s-new-version"></span>
               </div>
-              <button class="s-row s-row-last" id="btn-update" style="cursor:pointer">
-                <span class="s-row-label" style="color:var(--accent)">Como atualizar</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
+              <button class="s-row s-row-last s-row-clickable s-row-accent" id="btn-update">
+                <span class="s-row-label s-row-label-accent">Como atualizar</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
           </div>

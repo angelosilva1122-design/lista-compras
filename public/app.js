@@ -179,7 +179,7 @@ function updateProgress() {
   document.getElementById('progress-fill').style.width = pct + '%';
 
   const isComplete = total > 0 && done === total;
-  document.getElementById('success-text').style.display = isComplete ? 'block' : 'none';
+  document.getElementById('success-text').classList.toggle('hidden', !isComplete);
 }
 
 function esc(str) {
@@ -201,7 +201,7 @@ function toggleSuperMode() {
   topbar.classList.toggle('super-mode', superMode);
   btn.classList.toggle('super-active', superMode);
   btn.setAttribute('aria-pressed', superMode);
-  progressWrap.style.display = superMode ? 'block' : 'none';
+  progressWrap.classList.toggle('hidden', !superMode);
   bottombar.style.display = superMode ? 'none' : 'flex';
 
   // Update status bar color on iOS
@@ -237,7 +237,7 @@ function updateExpandAllButton() {
   const anyExpanded = state.categories.some(c => state.collapsed[c] !== true);
   btn.classList.toggle('all-collapsed', !anyExpanded);
   text.textContent = anyExpanded ? 'Recolher tudo' : 'Expandir tudo';
-  btn.style.display = state.categories.length === 0 ? 'none' : 'flex';
+  btn.classList.toggle('hidden', state.categories.length === 0);
 }
 
 // ===== TOGGLE CATEGORY =====
@@ -468,7 +468,7 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.4';
+const CURRENT_VERSION = '1.3.5';
 
 async function checkVersion() {
   try {
@@ -476,7 +476,7 @@ async function checkVersion() {
     const data = await resp.json();
     if (data.version && data.version !== CURRENT_VERSION) {
       document.getElementById('s-new-version').textContent = 'v' + data.version;
-      document.getElementById('update-available').style.display = 'block';
+      document.getElementById('update-available').classList.remove('hidden');
     }
   } catch (e) {}
 }
@@ -504,28 +504,93 @@ function exportList() {
 }
 
 // ===== IMPORT =====
+const MAX_IMPORT_SIZE = 512 * 1024; // 512KB máximo
+const MAX_CATEGORIES = 100;
+const MAX_ITEMS = 1000;
+const MAX_STRING_LENGTH = 200;
+
+function validateImportData(data) {
+  // Must be an object
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return 'Ficheiro inválido';
+
+  // Must have categories array
+  if (!Array.isArray(data.categories)) return 'Ficheiro inválido: categorias em falta';
+  if (data.categories.length > MAX_CATEGORIES) return `Demasiadas categorias (máximo ${MAX_CATEGORIES})`;
+  for (const cat of data.categories) {
+    if (typeof cat !== 'string') return 'Ficheiro inválido: categoria inválida';
+    if (cat.length === 0 || cat.length > MAX_STRING_LENGTH) return 'Ficheiro inválido: nome de categoria inválido';
+  }
+
+  // Must have items array
+  if (!Array.isArray(data.items)) return 'Ficheiro inválido: produtos em falta';
+  if (data.items.length > MAX_ITEMS) return `Demasiados produtos (máximo ${MAX_ITEMS})`;
+  for (const item of data.items) {
+    if (!item || typeof item !== 'object') return 'Ficheiro inválido: produto inválido';
+    if (typeof item.name !== 'string' || item.name.length === 0 || item.name.length > MAX_STRING_LENGTH) return 'Ficheiro inválido: nome de produto inválido';
+    if (item.qty !== undefined && (typeof item.qty !== 'string' || item.qty.length > MAX_STRING_LENGTH)) return 'Ficheiro inválido: quantidade inválida';
+    if (typeof item.cat !== 'string') return 'Ficheiro inválido: categoria do produto inválida';
+    if (typeof item.checked !== 'boolean') return 'Ficheiro inválido: estado inválido';
+    if (typeof item.bought !== 'boolean') return 'Ficheiro inválido: estado inválido';
+    if (!data.categories.includes(item.cat)) return `Ficheiro inválido: produto "${item.name}" tem categoria desconhecida`;
+  }
+
+  // Validate prefs if present
+  if (data.prefs !== undefined) {
+    if (typeof data.prefs !== 'object' || Array.isArray(data.prefs)) return 'Ficheiro inválido: preferências inválidas';
+    if (data.prefs.expandByDefault !== undefined && typeof data.prefs.expandByDefault !== 'boolean') return 'Ficheiro inválido: preferências inválidas';
+    if (data.prefs.showQty !== undefined && typeof data.prefs.showQty !== 'boolean') return 'Ficheiro inválido: preferências inválidas';
+  }
+
+  return null; // válido
+}
+
 function importList(file) {
   if (!file) return;
+
+  // Check file size
+  if (file.size > MAX_IMPORT_SIZE) {
+    showToast('Ficheiro demasiado grande (máx. 512KB)');
+    return;
+  }
+
+  // Check file type
+  if (!file.name.endsWith('.json') && file.type !== 'application/json') {
+    showToast('Formato inválido — usa um ficheiro .json');
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.categories || !data.items) {
-        showToast('Ficheiro inválido');
+      const error = validateImportData(data);
+      if (error) {
+        showToast(error);
         return;
       }
-      if (!confirm(`Importar lista com ${data.items.length} produto(s)? Os dados atuais serão substituídos.`)) return;
-      state.categories = data.categories || [];
-      state.items = data.items || [];
-      if (data.prefs) state.prefs = { ...state.prefs, ...data.prefs };
+      if (!confirm(`Importar lista com ${data.items.length} produto(s) e ${data.categories.length} categoria(s)? Os dados atuais serão substituídos.`)) return;
+      state.categories = data.categories;
+      state.items = data.items.map(item => ({
+        id: typeof item.id === 'number' ? item.id : Date.now() + Math.random(),
+        name: item.name,
+        qty: item.qty || '',
+        cat: item.cat,
+        checked: item.checked,
+        bought: item.bought
+      }));
+      if (data.prefs) {
+        if (typeof data.prefs.expandByDefault === 'boolean') state.prefs.expandByDefault = data.prefs.expandByDefault;
+        if (typeof data.prefs.showQty === 'boolean') state.prefs.showQty = data.prefs.showQty;
+      }
       state.collapsed = {};
       saveState();
       render();
       showToast('Lista importada com sucesso');
     } catch (err) {
-      showToast('Erro ao importar ficheiro');
+      showToast('Erro ao ler ficheiro — verifica se é um backup válido');
     }
   };
+  reader.onerror = () => showToast('Erro ao ler ficheiro');
   reader.readAsText(file);
 }
 
