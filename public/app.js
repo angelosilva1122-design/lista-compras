@@ -9,7 +9,8 @@ const DEFAULT_STATE = {
   collapsed: {},
   prefs: {
     expandByDefault: true,
-    showQty: true
+    showQty: true,
+    superSearch: false
   },
   theme: 'auto'
 };
@@ -197,12 +198,30 @@ function toggleSuperMode() {
   const bottombar = document.querySelector('.bottombar');
   const progressWrap = document.getElementById('progress-wrap');
   const btn = document.getElementById('btn-supermarket');
+  const searchInput = document.getElementById('search-input');
+  const searchClear = document.getElementById('search-clear');
+
+  // Always clear search when entering supermarket mode
+  if (superMode) {
+    searchInput.value = '';
+    searchClear.classList.remove('visible');
+  }
 
   topbar.classList.toggle('super-mode', superMode);
   btn.classList.toggle('super-active', superMode);
   btn.setAttribute('aria-pressed', superMode);
   progressWrap.classList.toggle('hidden', !superMode);
   bottombar.style.display = superMode ? 'none' : 'flex';
+
+  // Show/hide search based on pref when in supermarket mode
+  // The CSS hides it by default (.topbar.super-mode .search-wrap { display: none })
+  // If superSearch pref is enabled, override that
+  const searchWrap = document.querySelector('.search-wrap');
+  if (superMode && state.prefs.superSearch) {
+    searchWrap.style.display = 'flex';
+  } else if (!superMode) {
+    searchWrap.style.display = '';
+  }
 
   // Update status bar color on iOS
   const meta = document.getElementById('theme-color-meta');
@@ -468,7 +487,7 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.5';
+const CURRENT_VERSION = '1.3.6';
 
 async function checkVersion() {
   try {
@@ -735,7 +754,9 @@ function showToast(msg) {
 // ===== PREFS =====
 function togglePref(key) {
   state.prefs[key] = !state.prefs[key];
-  const tog = document.getElementById('tog-' + (key === 'expandByDefault' ? 'expand' : 'qty'));
+
+  const togId = key === 'expandByDefault' ? 'expand' : key === 'showQty' ? 'qty' : 'super-search';
+  const tog = document.getElementById('tog-' + togId);
   if (tog) tog.setAttribute('aria-checked', state.prefs[key]);
 
   if (key === 'expandByDefault') {
@@ -929,6 +950,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('tog-expand').addEventListener('click', () => togglePref('expandByDefault'));
   document.getElementById('tog-qty').addEventListener('click', () => togglePref('showQty'));
+  document.getElementById('tog-super-search').addEventListener('click', () => togglePref('superSearch'));
   document.getElementById('btn-clear-bought').addEventListener('click', clearBought);
   document.getElementById('btn-clear-all').addEventListener('click', clearAll);
 
@@ -955,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('tog-expand').setAttribute('aria-checked', state.prefs.expandByDefault);
   document.getElementById('tog-qty').setAttribute('aria-checked', state.prefs.showQty);
+  document.getElementById('tog-super-search').setAttribute('aria-checked', state.prefs.superSearch || false);
 
   if (!state.prefs.expandByDefault) {
     state.categories.forEach(c => {
