@@ -487,7 +487,7 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.6';
+const CURRENT_VERSION = '1.3.7';
 
 async function checkVersion() {
   try {
