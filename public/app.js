@@ -29,9 +29,18 @@ function loadState() {
 
 function saveState() {
   try {
-    localStorage.setItem('compras-v1', JSON.stringify(state));
+    const serialized = JSON.stringify(state);
+    // Warn if approaching localStorage limits (~4MB threshold)
+    if (serialized.length > 4 * 1024 * 1024) {
+      showToast('Atenção: lista muito grande, considera limpar produtos antigos');
+    }
+    localStorage.setItem('compras-v1', serialized);
   } catch (e) {
-    showToast('Erro ao guardar dados');
+    if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+      showToast('Sem espaço para guardar — remove alguns produtos');
+    } else {
+      showToast('Erro ao guardar dados');
+    }
   }
 }
 
@@ -211,16 +220,14 @@ function toggleSuperMode() {
   btn.classList.toggle('super-active', superMode);
   btn.setAttribute('aria-pressed', superMode);
   progressWrap.classList.toggle('hidden', !superMode);
-  bottombar.style.display = superMode ? 'none' : 'flex';
+  bottombar.classList.toggle('hidden', superMode);
 
   // Show/hide search based on pref when in supermarket mode
-  // The CSS hides it by default (.topbar.super-mode .search-wrap { display: none })
-  // If superSearch pref is enabled, override that
   const searchWrap = document.querySelector('.search-wrap');
   if (superMode && state.prefs.superSearch) {
-    searchWrap.style.display = 'flex';
-  } else if (!superMode) {
-    searchWrap.style.display = '';
+    searchWrap.classList.add('super-search-visible');
+  } else {
+    searchWrap.classList.remove('super-search-visible');
   }
 
   // Update status bar color on iOS
@@ -487,17 +494,25 @@ function moveCat(cat, direction) {
 }
 
 // ===== VERSION CHECK =====
-const CURRENT_VERSION = '1.3.7';
+const CURRENT_VERSION = '1.3.8';
 
 async function checkVersion() {
   try {
-    const resp = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const resp = await fetch('version.json?t=' + Date.now(), {
+      cache: 'no-store',
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
     const data = await resp.json();
     if (data.version && data.version !== CURRENT_VERSION) {
       document.getElementById('s-new-version').textContent = 'v' + data.version;
       document.getElementById('update-available').classList.remove('hidden');
     }
-  } catch (e) {}
+  } catch (e) {
+    // Silently fail — version check is non-critical
+  }
 }
 
 // ===== EXPORT =====
@@ -589,14 +604,21 @@ function importList(file) {
       }
       if (!confirm(`Importar lista com ${data.items.length} produto(s) e ${data.categories.length} categoria(s)? Os dados atuais serão substituídos.`)) return;
       state.categories = data.categories;
-      state.items = data.items.map(item => ({
-        id: typeof item.id === 'number' ? item.id : Date.now() + Math.random(),
-        name: item.name,
-        qty: item.qty || '',
-        cat: item.cat,
-        checked: item.checked,
-        bought: item.bought
-      }));
+      const usedIds = new Set();
+      state.items = data.items.map(item => {
+        let id = typeof item.id === 'number' ? item.id : Date.now() + Math.random();
+        // Ensure no duplicate IDs
+        while (usedIds.has(id)) { id = Date.now() + Math.random(); }
+        usedIds.add(id);
+        return {
+          id,
+          name: item.name,
+          qty: item.qty || '',
+          cat: item.cat,
+          checked: item.checked,
+          bought: item.bought
+        };
+      });
       if (data.prefs) {
         if (typeof data.prefs.expandByDefault === 'boolean') state.prefs.expandByDefault = data.prefs.expandByDefault;
         if (typeof data.prefs.showQty === 'boolean') state.prefs.showQty = data.prefs.showQty;

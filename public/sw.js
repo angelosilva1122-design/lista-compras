@@ -1,4 +1,4 @@
-const CACHE = 'compras-v1.3.7';
+const CACHE = 'compras-v1.3.8';
 const ASSETS = [
   '/',
   '/index.html',

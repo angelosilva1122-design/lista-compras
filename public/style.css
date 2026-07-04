@@ -562,6 +562,11 @@ html, body {
   display: none;
 }
 
+/* Override: show search in supermarket mode if pref enabled */
+.topbar.super-mode .search-wrap.super-search-visible {
+  display: flex;
+}
+
 /* Progress footer with conclude button */
 .progress-footer {
   display: flex;
