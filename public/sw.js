@@ -1,4 +1,4 @@
-const CACHE = 'compras-v1.3.8';
+const CACHE = 'compras-v1.4.0';
 const ASSETS = [
   '/',
   '/index.html',
@@ -26,26 +26,23 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: cache-first strategy for app assets, network-only for version.json
+// Fetch: cache-first strategy for app assets, passthrough for version.json
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
 
-  // version.json always from network (no cache)
-  if (e.request.url.includes('version.json')) {
-    e.respondWith(fetch(e.request).catch(() => new Response('{}', { headers: { 'Content-Type': 'application/json' } })));
-    return;
-  }
+  // version.json: do NOT intercept — let browser handle directly
+  // This prevents the SW from making a duplicate request
+  if (e.request.url.includes('version.json')) return;
 
   // Cache-first for everything else
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) {
         // Serve from cache immediately, update cache in background
-        const networkUpdate = fetch(e.request).then(resp => {
+        fetch(e.request).then(resp => {
           if (resp && resp.status === 200) {
             caches.open(CACHE).then(cache => cache.put(e.request, resp.clone()));
           }
-          return resp;
         }).catch(() => {});
         return cached;
       }
